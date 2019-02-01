@@ -1,6 +1,3 @@
-/* For email below, drop spaces and <spam-buster> tag.
- * MODIFIED:  March 20, 2014 (jric<spam-buster> @ <spam-buster> chegg DOT com)
-*/
 #include "efence.h"
 #include <stdlib.h>
 #include <unistd.h>
@@ -32,7 +29,7 @@
 
 static caddr_t	startAddr = (caddr_t) 0;
 
-#if ( !defined(sgi) && !defined(_AIX) && __DARWIN_C_LEVEL < __DARWIN_C_FULL )
+#if ( !defined(sgi) && !defined(_AIX) )
 extern int	sys_nerr;
 /*extern char *	sys_errlist[];*/
 #endif
@@ -40,15 +37,13 @@ extern int	sys_nerr;
 static const char *
 stringErrorReport(void)
 {
+  char err_message[128];
 #if ( defined(sgi) )
 	return strerror(oserror());
 #elif ( defined(_AIX) )
 	return strerror(errno);
 #else
-	if ( errno > 0 && errno < sys_nerr )
-		return sys_errlist[errno];
-	else
-		return "Unknown error.\n";
+	return strerror_r(errno,(char *)err_message,128);
 #endif
 }
 
@@ -73,7 +68,7 @@ Page_Create(size_t size)
 	 */
 	allocation = (caddr_t) mmap(
 	 startAddr
-	,size
+	 ,(int)size
 	,PROT_READ|PROT_WRITE
 	,MAP_PRIVATE|MAP_ANONYMOUS
 	,-1
@@ -125,7 +120,7 @@ Page_Create(size_t size)
 	 */
 	allocation = (caddr_t) mmap(
 	 startAddr
-	,size
+	 ,(int)size
 	,PROT_READ|PROT_WRITE
 	,MAP_PRIVATE
 	,devZeroFd
@@ -164,6 +159,8 @@ void
 Page_Delete(void * address, size_t size)
 {
 	Page_DenyAccess(address, size);
+	/* Tell the kernel we will never need it again.  */
+	madvise(address, size, MADV_DONTNEED);
 }
 
 #if defined(_SC_PAGESIZE)

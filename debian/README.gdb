@@ -28,7 +28,7 @@ end
 document underfence
 Enable memory allocation debugging for underflows through Electric Fence 
 (efence(3)).
-        See also nofence and underfence.
+        See also nofence and efence.
 end
 
 
